@@ -58,9 +58,31 @@ impl<const BITS: usize, const LIMBS: usize> Uint<BITS, LIMBS> {
     }
 
     /// Computes `self * rhs`, wrapping around at the boundary of the type.
+    #[cfg(not(all(target_os = "zkvm", target_vendor = "zisk")))]
     #[inline(always)]
     #[must_use]
     pub fn wrapping_mul(self, rhs: Self) -> Self {
+        let mut result = Self::ZERO;
+        algorithms::addmul_n(&mut result.limbs, self.as_limbs(), rhs.as_limbs());
+        if BITS > 0 {
+            result.apply_mask();
+        }
+        result
+    }
+
+    /// Computes `self + rhs`, wrapping around at the boundary of the type.
+    #[cfg(all(target_os = "zkvm", target_vendor = "zisk"))]
+    #[inline(always)]
+    #[must_use]
+    pub fn wrapping_mul(mut self, rhs: Self) -> Self {
+        if BITS == 256 {
+            unsafe {
+                crate::support::zisk::mul256(self.limbs.as_mut_ptr(), self.limbs.as_ptr(), rhs.limbs.as_ptr());
+            }
+            return self;
+        }
+
+        // Fallback to the original implementation
         let mut result = Self::ZERO;
         algorithms::addmul_n(&mut result.limbs, self.as_limbs(), rhs.as_limbs());
         if BITS > 0 {

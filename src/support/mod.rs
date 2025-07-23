@@ -31,6 +31,7 @@ pub mod ssz;
 mod subtle;
 mod valuable;
 mod zeroize;
+pub mod zisk;
 
 // FEATURE: Support for many more traits and crates.
 // * https://crates.io/crates/der

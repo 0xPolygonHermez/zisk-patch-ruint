@@ -59,10 +59,32 @@ impl<const BITS: usize, const LIMBS: usize> Uint<BITS, LIMBS> {
     /// # Panics
     ///
     /// Panics if `rhs == 0`.
+    #[cfg(not(all(target_os = "zkvm", target_vendor = "zisk")))]
     #[inline]
     #[must_use]
     #[track_caller]
     pub fn wrapping_div(self, rhs: Self) -> Self {
+        self.div_rem(rhs).0
+    }
+
+    /// Computes `self / rhs` rounding down.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `rhs == 0`.
+    #[cfg(all(target_os = "zkvm", target_vendor = "zisk"))]
+    #[inline]
+    #[must_use]
+    #[track_caller]
+    pub fn wrapping_div(mut self, rhs: Self) -> Self {
+        if BITS == 256 {
+            unsafe {
+                crate::support::zisk::div256(self.limbs.as_mut_ptr(), self.limbs.as_ptr(), rhs.limbs.as_ptr());
+            }
+            return self;
+        }
+
+        // Fallback to the original implementation
         self.div_rem(rhs).0
     }
 
@@ -71,10 +93,32 @@ impl<const BITS: usize, const LIMBS: usize> Uint<BITS, LIMBS> {
     /// # Panics
     ///
     /// Panics if `rhs == 0`.
+    #[cfg(not(all(target_os = "zkvm", target_vendor = "zisk")))]
     #[inline]
     #[must_use]
     #[track_caller]
     pub fn wrapping_rem(self, rhs: Self) -> Self {
+        self.div_rem(rhs).1
+    }
+
+    /// Computes `self % rhs`.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `rhs == 0`.
+    #[cfg(all(target_os = "zkvm", target_vendor = "zisk"))]
+    #[inline]
+    #[must_use]
+    #[track_caller]
+    pub fn wrapping_rem(mut self, rhs: Self) -> Self {
+        if BITS == 256 {
+            unsafe {
+                crate::support::zisk::rem256(self.limbs.as_mut_ptr(), self.limbs.as_ptr(), rhs.limbs.as_ptr());
+            }
+            return self;
+        }
+
+        // Fallback to the original implementation
         self.div_rem(rhs).1
     }
 }
