@@ -5,6 +5,9 @@ use core::{
     ops::{Mul, MulAssign},
 };
 
+#[cfg(all(target_os = "zkvm", target_vendor = "zisk"))]
+use ziskos::zisklib::{wmul256_ptr, omul256_ptr};
+
 impl<const BITS: usize, const LIMBS: usize> Uint<BITS, LIMBS> {
     /// Computes `self * rhs`, returning [`None`] if overflow occurred.
     #[inline(always)]
@@ -37,6 +40,26 @@ impl<const BITS: usize, const LIMBS: usize> Uint<BITS, LIMBS> {
     #[inline]
     #[must_use]
     pub fn overflowing_mul(self, rhs: Self) -> (Self, bool) {
+        #[cfg(all(target_os = "zkvm", target_vendor = "zisk"))]
+        {
+            if BITS == 256 && LIMBS == 4 {
+                let mut result = Self::ZERO;
+                let mut overflow;
+                unsafe {
+                    overflow = omul256_ptr(
+                        self.limbs.as_ptr(),
+                        rhs.limbs.as_ptr(),
+                        result.limbs.as_mut_ptr(),
+                    );
+                }
+                if Self::SHOULD_MASK {
+                    overflow |= result.limbs[LIMBS - 1] > Self::MASK;
+                    result.apply_mask();
+                }
+                return (result, overflow);
+            }
+        }
+
         let mut result = Self::ZERO;
         let mut overflow = algorithms::addmul(&mut result.limbs, self.as_limbs(), rhs.as_limbs());
         if Self::SHOULD_MASK {
@@ -61,6 +84,22 @@ impl<const BITS: usize, const LIMBS: usize> Uint<BITS, LIMBS> {
     #[inline(always)]
     #[must_use]
     pub fn wrapping_mul(self, rhs: Self) -> Self {
+        #[cfg(all(target_os = "zkvm", target_vendor = "zisk"))]
+        {
+            if BITS == 256 && LIMBS == 4 {
+                let mut result = Self::ZERO;
+                unsafe {
+                    wmul256_ptr(
+                        self.limbs.as_ptr(),
+                        rhs.limbs.as_ptr(),
+                        result.limbs.as_mut_ptr(),
+                    );
+                }
+                result.apply_mask();
+                return result;
+            }
+        }
+        
         let mut result = Self::ZERO;
         algorithms::addmul_n(&mut result.limbs, self.as_limbs(), rhs.as_limbs());
         result.apply_mask();

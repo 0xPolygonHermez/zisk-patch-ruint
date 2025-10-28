@@ -1,5 +1,8 @@
 use crate::Uint;
 
+#[cfg(all(target_os = "zkvm", target_vendor = "zisk"))]
+use ziskos::zisklib::{wpow256_ptr};
+
 impl<const BITS: usize, const LIMBS: usize> Uint<BITS, LIMBS> {
     /// Raises self to the power of `exp`.
     ///
@@ -97,6 +100,21 @@ impl<const BITS: usize, const LIMBS: usize> Uint<BITS, LIMBS> {
     pub fn wrapping_pow(mut self, mut exp: Self) -> Self {
         if BITS == 0 {
             return self;
+        }
+
+        #[cfg(all(target_os = "zkvm", target_vendor = "zisk"))]
+        {
+            if BITS == 256 && LIMBS == 4 {
+                let mut result = Self::ZERO;
+                unsafe {
+                    wpow256_ptr(
+                        self.limbs.as_ptr(),
+                        exp.limbs.as_ptr(),
+                        result.limbs.as_mut_ptr(),
+                    );
+                }
+                return result;
+            }
         }
 
         // Exponentiation by squaring

@@ -1,6 +1,9 @@
 use crate::{Uint, algorithms};
 use core::ops::{Div, DivAssign, Rem, RemAssign};
 
+#[cfg(all(target_os = "zkvm", target_vendor = "zisk"))]
+use ziskos::zisklib::divrem256_ptr;
+
 impl<const BITS: usize, const LIMBS: usize> Uint<BITS, LIMBS> {
     /// Computes `self / rhs`, returning [`None`] if `rhs == 0`.
     #[inline]
@@ -46,6 +49,23 @@ impl<const BITS: usize, const LIMBS: usize> Uint<BITS, LIMBS> {
     #[must_use]
     #[track_caller]
     pub fn div_rem(mut self, mut rhs: Self) -> (Self, Self) {
+        #[cfg(all(target_os = "zkvm", target_vendor = "zisk"))]
+        {
+            if BITS == 256 && LIMBS == 4 {
+                let mut q = Self::ZERO;
+                let mut r = Self::ZERO;
+                unsafe {
+                    divrem256_ptr(
+                        self.limbs.as_ptr(),
+                        rhs.limbs.as_ptr(),
+                        q.limbs.as_mut_ptr(),
+                        r.limbs.as_mut_ptr(),
+                    );
+                }
+                return (q, r);
+            }
+        }
+
         if LIMBS == 1 {
             let q = &mut self.limbs[0];
             let r = &mut rhs.limbs[0];

@@ -7,6 +7,9 @@ use crate::{Uint, algorithms};
 // See also <https://static1.squarespace.com/static/61f7cacf2d7af938cad5b81c/t/62deb4e0c434f7134c2730ee/1658762465114/modular_multiplication.pdf>
 // FEATURE: Modular wrapper class, like Wrapping.
 
+#[cfg(all(target_os = "zkvm", target_vendor = "zisk"))]
+use ziskos::zisklib::{redmod256_ptr, addmod256_ptr, mulmod256_ptr};
+
 impl<const BITS: usize, const LIMBS: usize> Uint<BITS, LIMBS> {
     /// ⚠️ Compute $\mod{\mathtt{self}}_{\mathtt{modulus}}$.
     ///
@@ -21,6 +24,20 @@ impl<const BITS: usize, const LIMBS: usize> Uint<BITS, LIMBS> {
             return Self::ZERO;
         }
         if self >= modulus {
+            #[cfg(all(target_os = "zkvm", target_vendor = "zisk"))]
+            {
+                if BITS == 256 && LIMBS == 4 {
+                    let mut result = Self::ZERO;
+                    unsafe {
+                        redmod256_ptr(
+                            self.limbs.as_ptr(),
+                            modulus.limbs.as_ptr(),
+                            result.limbs.as_mut_ptr(),
+                        );
+                    }
+                    return result;
+                }
+            }
             self %= modulus;
         }
         self
@@ -34,6 +51,21 @@ impl<const BITS: usize, const LIMBS: usize> Uint<BITS, LIMBS> {
     pub fn add_mod(mut self, rhs: Self, mut modulus: Self) -> Self {
         if modulus.is_zero() {
             return Self::ZERO;
+        }
+        #[cfg(all(target_os = "zkvm", target_vendor = "zisk"))]
+        {
+            if BITS == 256 && LIMBS == 4 {
+                let mut result = Self::ZERO;
+                unsafe {
+                    addmod256_ptr(
+                        self.limbs.as_ptr(),
+                        rhs.limbs.as_ptr(),
+                        modulus.limbs.as_ptr(),
+                        result.limbs.as_mut_ptr(),
+                    );
+                }
+                return result;
+            }
         }
 
         // This is not going to truncate with the final cast because the modulus value
@@ -86,6 +118,22 @@ impl<const BITS: usize, const LIMBS: usize> Uint<BITS, LIMBS> {
     #[inline(always)]
     #[must_use]
     pub fn mul_mod(self, rhs: Self, mut modulus: Self) -> Self {
+        #[cfg(all(target_os = "zkvm", target_vendor = "zisk"))]
+        {
+            if BITS == 256 && LIMBS == 4 {
+                let mut result = Self::ZERO;
+                unsafe {
+                    mulmod256_ptr(
+                        self.limbs.as_ptr(),
+                        rhs.limbs.as_ptr(),
+                        modulus.limbs.as_ptr(),
+                        result.limbs.as_mut_ptr(),
+                    );
+                }
+                return result;
+            }
+        }
+
         self.mul_mod_by_ref(&rhs, &mut modulus);
         modulus
     }
