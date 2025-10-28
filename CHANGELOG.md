@@ -9,6 +9,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.17.0] - 2025-09-24
+
+### Added
+
+- Support for [bincode 2](https://github.com/bincode-org/bincode) ([#516])
+- Introduce `ark-ff-05` feature flag for conversion to `ark-ff@0.5` types ([#526])
+
+### Changed
+
+- MSRV bumped to 1.85 ([#503])
+- Made `*next_power_of_two` and `*next_multiple_of` `const` ([#533])
+- Reimplemented `TryFrom<f64>` for `Uint` to speed it up, fixing edge cases and removing `std` requirements ([#524])
+- Reimplemented `From<Uint>` for `f64` and `f32` to speed it up, fixing edge cases and removing `std` requirements ([#535])
+
+[#503]: https://github.com/recmo/uint/pull/503
+[#516]: https://github.com/recmo/uint/pull/516
+[#526]: https://github.com/recmo/uint/pull/526
+[#533]: https://github.com/recmo/uint/pull/533
+[#524]: https://github.com/recmo/uint/pull/524
+
+## [1.16.0] - 2025-08-04
+
 ### Added
 
 - Support [rkyv](https://github.com/rkyv/rkyv) ([#483])
@@ -18,6 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - `to_base_be` and `core::fmt` trait implementations are available without the "alloc" feature ([#488])
+- Greatly improved performance across the board, mainly in: conversions, fmt, div/rem, mul, add_mod, leading_zeros
 
 ### Fixed
 
@@ -446,7 +469,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- links to version -->
 
-[unreleased]: https://github.com/recmo/uint/compare/v1.15.0...HEAD
+[unreleased]: https://github.com/recmo/uint/compare/v1.17.0...HEAD
+[1.17.0]: https://github.com/recmo/uint/releases/tag/v1.17.0
+[1.16.0]: https://github.com/recmo/uint/releases/tag/v1.16.0
 [1.15.0]: https://github.com/recmo/uint/releases/tag/v1.15.0
 [1.14.0]: https://github.com/recmo/uint/releases/tag/v1.14.0
 [1.13.1]: https://github.com/recmo/uint/releases/tag/v1.13.1

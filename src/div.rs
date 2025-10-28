@@ -1,4 +1,4 @@
-use crate::{algorithms, Uint};
+use crate::{Uint, algorithms};
 use core::ops::{Div, DivAssign, Rem, RemAssign};
 
 impl<const BITS: usize, const LIMBS: usize> Uint<BITS, LIMBS> {
@@ -34,11 +34,7 @@ impl<const BITS: usize, const LIMBS: usize> Uint<BITS, LIMBS> {
     #[track_caller]
     pub fn div_ceil(self, rhs: Self) -> Self {
         let (q, r) = self.div_rem(rhs);
-        if r.is_zero() {
-            q
-        } else {
-            q + Self::ONE
-        }
+        if r.is_zero() { q } else { q + Self::ONE }
     }
 
     /// Computes `self / rhs` and `self % rhs`.
@@ -46,7 +42,7 @@ impl<const BITS: usize, const LIMBS: usize> Uint<BITS, LIMBS> {
     /// # Panics
     ///
     /// Panics if `rhs == 0`.
-    #[inline]
+    #[inline(always)]
     #[must_use]
     #[track_caller]
     pub fn div_rem(mut self, mut rhs: Self) -> (Self, Self) {
@@ -55,9 +51,14 @@ impl<const BITS: usize, const LIMBS: usize> Uint<BITS, LIMBS> {
             let r = &mut rhs.limbs[0];
             (*q, *r) = algorithms::div::div_1x1(*q, *r);
         } else {
-            algorithms::div(&mut self.limbs, &mut rhs.limbs);
+            Self::div_rem_by_ref(&mut self, &mut rhs);
         }
         (self, rhs)
+    }
+
+    #[inline(never)]
+    pub(crate) fn div_rem_by_ref(numerator: &mut Self, rhs: &mut Self) {
+        algorithms::div::div_inlined(&mut numerator.limbs, &mut rhs.limbs);
     }
 
     /// Computes `self / rhs` rounding down.

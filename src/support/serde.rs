@@ -3,11 +3,11 @@
 #![cfg(feature = "serde")]
 #![cfg_attr(docsrs, doc(cfg(feature = "serde")))]
 
-use crate::{fmt::StackString, nbytes, Bits, Uint};
+use crate::{Bits, Uint, fmt::StackString, nbytes};
 use core::{fmt, str};
-use serde::{
-    de::{Error, Unexpected, Visitor},
+use serde_core::{
     Deserialize, Deserializer, Serialize, Serializer,
+    de::{Error, Unexpected, Visitor},
 };
 
 /// Canonical serialization for all human-readable instances of `Uint<0, 0>`,

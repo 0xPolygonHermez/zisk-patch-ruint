@@ -1,13 +1,13 @@
 //! Knuth division
 
-use super::{reciprocal::reciprocal_2, small::div_3x2, DoubleWord};
+use super::{DoubleWord, reciprocal::reciprocal_2, small::div_3x2};
 use crate::{
-    algorithms::{add::adc_n, mul::submul_nx1},
-    utils::{likely, unlikely},
+    algorithms::{add::carrying_add_n, mul::submul_nx1},
+    utils::{UncheckedSlice, likely, unlikely},
 };
 
 /// ⚠️ In-place Knuth normalized long division with reciprocals.
-///
+#[doc = crate::algorithms::unstable_warning!()]
 /// # Conditions of Use
 ///
 /// * The highest (most-significant) bit of the divisor MUST be set.
@@ -17,12 +17,15 @@ use crate::{
 /// # Panics
 ///
 /// May panic if any condition of use is violated.
-#[inline]
+#[inline(always)]
 #[allow(clippy::many_single_char_names)]
 pub fn div_nxm_normalized(numerator: &mut [u64], divisor: &[u64]) {
     debug_assert!(divisor.len() >= 2);
     debug_assert!(numerator.len() >= divisor.len());
     debug_assert!(*divisor.last().unwrap() >= (1 << 63));
+
+    let numerator = UncheckedSlice::wrap_mut(numerator);
+    let divisor = UncheckedSlice::wrap(divisor);
 
     let n = divisor.len();
     let m = numerator.len() - n - 1;
@@ -64,9 +67,9 @@ pub fn div_nxm_normalized(numerator: &mut [u64], divisor: &[u64]) {
         // We correct by decrementing the quotient and adding one divisor back.
         if unlikely(borrow) {
             q = q.wrapping_sub(1);
-            let carry = adc_n(&mut numerator[j..j + n], &divisor[..n], 0);
+            let carry = carrying_add_n(&mut numerator[j..j + n], &divisor[..n], false);
             // Expect carry because we flip sign back to positive.
-            debug_assert_eq!(carry, 1);
+            debug_assert!(carry);
         }
 
         // Store quotient in the unused bits of numerator
@@ -75,7 +78,7 @@ pub fn div_nxm_normalized(numerator: &mut [u64], divisor: &[u64]) {
 }
 
 /// ⚠️ In-place Knuth long division with implicit normalization and reciprocals.
-///
+#[doc = crate::algorithms::unstable_warning!()]
 /// # Conditions of use:
 ///
 /// * `divisor` MUST NOT be empty.
@@ -86,12 +89,15 @@ pub fn div_nxm_normalized(numerator: &mut [u64], divisor: &[u64]) {
 /// # Panics
 ///
 /// May panic if any condition of use is violated.
-#[inline]
+#[inline(always)]
 #[allow(clippy::many_single_char_names)]
 pub fn div_nxm(numerator: &mut [u64], divisor: &mut [u64]) {
     debug_assert!(divisor.len() >= 3);
-    debug_assert!(numerator.len() >= divisor.len());
+    assume!(numerator.len() >= divisor.len()); // Elides the check in `copy_within`.
     debug_assert!(*divisor.last().unwrap() >= 1);
+
+    let numerator = UncheckedSlice::wrap_mut(numerator);
+    let divisor = UncheckedSlice::wrap_mut(divisor);
 
     let n = divisor.len();
     let m = numerator.len() - n;
@@ -115,7 +121,8 @@ pub fn div_nxm(numerator: &mut [u64], divisor: &mut [u64]) {
 
     // Compute the quotient one limb at a time.
     let mut q_high = 0;
-    for j in (0..=m).rev() {
+    #[allow(clippy::range_plus_one)] // Inclusive ranges optimize worse.
+    for j in (0..m + 1).rev() {
         // Fetch the first three limbs of the shifted numerator starting at `j + n`.
         let (n21, n0) = {
             let n2 = numerator.get(j + n).copied().unwrap_or_default();
@@ -163,9 +170,9 @@ pub fn div_nxm(numerator: &mut [u64], divisor: &mut [u64]) {
                 // We correct by decrementing the quotient and adding one divisor back.
                 if unlikely(borrow) {
                     q = q.wrapping_sub(1);
-                    let carry = adc_n(&mut numerator[j..j + n], &divisor[..n], 0);
+                    let carry = carrying_add_n(&mut numerator[j..j + n], &divisor[..n], false);
                     // Expect carry because we flip sign back to positive.
-                    debug_assert_eq!(carry, 1);
+                    debug_assert!(carry);
                 }
             }
             q
@@ -194,7 +201,7 @@ pub fn div_nxm(numerator: &mut [u64], divisor: &mut [u64]) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::algorithms::{addmul, cmp, sbb_n};
+    use crate::algorithms::{addmul, borrowing_sub_n, cmp};
     use core::cmp::Ordering;
     use proptest::{
         collection, num, proptest,
@@ -318,8 +325,8 @@ mod tests {
             let remainder =
                 collection::vec(num::u64::ANY, divisor.len()).prop_map(move |mut vec| {
                     if cmp(&vec, &d) != Ordering::Less {
-                        let carry = sbb_n(&mut vec, &d, 0);
-                        assert_eq!(carry, 0);
+                        let borrow = borrowing_sub_n(&mut vec, &d, false);
+                        assert!(!borrow);
                     }
                     vec
                 });

@@ -17,36 +17,31 @@ mod base {
         const MAX: u64 = crate::utils::max_pow_u64(Self::BASE);
         /// Number of characters written using `MAX` as the base in
         /// `to_base_be`.
-        // TODO(MSRV-1.67): = `Self::MAX.ilog(Self::BASE)`
-        const WIDTH: usize;
+        const WIDTH: usize = Self::MAX.ilog(Self::BASE) as _;
     }
 
     pub(super) struct Binary;
     impl Base for Binary {
         const BASE: u64 = 2;
         const PREFIX: &'static str = "0b";
-        const WIDTH: usize = 63;
     }
 
     pub(super) struct Octal;
     impl Base for Octal {
         const BASE: u64 = 8;
         const PREFIX: &'static str = "0o";
-        const WIDTH: usize = 21;
     }
 
     pub(super) struct Decimal;
     impl Base for Decimal {
         const BASE: u64 = 10;
         const PREFIX: &'static str = "";
-        const WIDTH: usize = 19;
     }
 
     pub(super) struct Hexadecimal;
     impl Base for Hexadecimal {
         const BASE: u64 = 16;
         const PREFIX: &'static str = "0x";
-        const WIDTH: usize = 15;
     }
 }
 use base::Base;
@@ -132,6 +127,18 @@ impl<const SIZE: usize> fmt::Write for StackString<SIZE> {
             core::ptr::copy_nonoverlapping(s.as_ptr(), dst, s.len());
         }
         self.len += s.len();
+        Ok(())
+    }
+
+    fn write_char(&mut self, c: char) -> fmt::Result {
+        let clen = c.len_utf8();
+        if self.len + clen > SIZE {
+            return Err(fmt::Error);
+        }
+        c.encode_utf8(unsafe {
+            core::slice::from_raw_parts_mut(self.buf.as_mut_ptr().add(self.len).cast(), clen)
+        });
+        self.len += clen;
         Ok(())
     }
 }

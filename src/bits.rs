@@ -1,4 +1,4 @@
-use crate::Uint;
+use crate::{Uint, utils::select_unpredictable_u32};
 use core::ops::{
     BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Not, Shl, ShlAssign, Shr,
     ShrAssign,
@@ -20,7 +20,7 @@ impl<const BITS: usize, const LIMBS: usize> Uint<BITS, LIMBS> {
 
     /// Sets a specific bit to a value.
     #[inline]
-    pub fn set_bit(&mut self, index: usize, value: bool) {
+    pub const fn set_bit(&mut self, index: usize, value: bool) {
         if index >= BITS {
             return;
         }
@@ -160,11 +160,10 @@ impl<const BITS: usize, const LIMBS: usize> Uint<BITS, LIMBS> {
         as_primitives!(self, {
             u64(x) => return x.leading_zeros() as usize - fixed,
             u128(x) => return x.leading_zeros() as usize - fixed,
-            u256(lo, hi) => return (if hi != 0 {
-                hi.leading_zeros()
-            } else {
+            u256(lo, hi) => return (select_unpredictable_u32(hi != 0,
+                hi.leading_zeros(),
                 lo.leading_zeros() + 128
-            }) as usize - fixed,
+            )) as usize - fixed,
         });
 
         let s = self.count_significant_words();
@@ -248,7 +247,7 @@ impl<const BITS: usize, const LIMBS: usize> Uint<BITS, LIMBS> {
     #[must_use]
     #[inline]
     pub const fn byte_len(&self) -> usize {
-        (self.bit_len() + 7) / 8
+        self.bit_len().div_ceil(8)
     }
 
     /// Returns the most significant 64 bits of the number and the exponent.

@@ -8,13 +8,17 @@
 #![allow(clippy::cast_possible_truncation)]
 
 use super::reciprocal::{reciprocal, reciprocal_2};
-use crate::{algorithms::DoubleWord, utils::unlikely};
+use crate::{
+    algorithms::DoubleWord,
+    utils::{UncheckedSlice, unlikely},
+};
 
 // The running time is 2.7 ns for [`div_2x1_mg10`] versus 18 ns for
 // [`div_2x1_ref`].
 pub use self::{div_2x1_mg10 as div_2x1, div_3x2_mg10 as div_3x2};
 
 /// ⚠️ Compute single limb division.
+#[doc = crate::algorithms::unstable_warning!()]
 #[inline(always)]
 #[track_caller]
 #[must_use]
@@ -23,11 +27,11 @@ pub const fn div_1x1(numerator: u64, divisor: u64) -> (u64, u64) {
 }
 
 /// ⚠️ Compute single limb normalized division.
-///
+#[doc = crate::algorithms::unstable_warning!()]
 /// The divisor must be normalized. See algorithm 7 from [MG10].
 ///
 /// [MG10]: https://gmplib.org/~tege/division-paper.pdf
-#[inline]
+#[inline(always)]
 pub fn div_nx1_normalized(u: &mut [u64], d: u64) -> u64 {
     // OPT: Version with in-place shifting of `u`
     debug_assert!(d >= (1 << 63));
@@ -44,7 +48,7 @@ pub fn div_nx1_normalized(u: &mut [u64], d: u64) -> u64 {
 }
 
 /// ⚠️ Compute single limb division.
-///
+#[doc = crate::algorithms::unstable_warning!()]
 /// The highest limb of `numerator` and `divisor` must be nonzero.
 /// The divisor does not need normalization.
 /// See algorithm 7 from [MG10].
@@ -53,13 +57,14 @@ pub fn div_nx1_normalized(u: &mut [u64], d: u64) -> u64 {
 ///
 /// # Panics
 ///
-/// May panics if the above requirements are not met.
-// TODO: Rewrite in a way that avoids bounds-checks without unsafe.
-#[inline]
+/// May panic if the above requirements are not met.
+#[inline(always)]
 pub fn div_nx1(limbs: &mut [u64], divisor: u64) -> u64 {
     debug_assert!(divisor != 0);
     debug_assert!(!limbs.is_empty());
     debug_assert!(*limbs.last().unwrap() != 0);
+
+    let limbs = UncheckedSlice::wrap_mut(limbs);
 
     // Normalize and compute reciprocal
     let shift = divisor.leading_zeros();
@@ -69,12 +74,12 @@ pub fn div_nx1(limbs: &mut [u64], divisor: u64) -> u64 {
     let divisor = divisor << shift;
     let reciprocal = reciprocal(divisor);
 
-    let last = unsafe { limbs.get_unchecked(limbs.len() - 1) };
+    let last = limbs[limbs.len() - 1];
     let mut remainder = last >> (64 - shift);
     for i in (1..limbs.len()).rev() {
         // Shift limbs
-        let upper = unsafe { limbs.get_unchecked(i) };
-        let lower = unsafe { limbs.get_unchecked(i - 1) };
+        let upper = limbs[i];
+        let lower = limbs[i - 1];
         let u = (upper << shift) | (lower >> (64 - shift));
 
         // Compute quotient
@@ -82,24 +87,24 @@ pub fn div_nx1(limbs: &mut [u64], divisor: u64) -> u64 {
         let (q, r) = div_2x1(n, divisor, reciprocal);
 
         // Store quotient
-        *unsafe { limbs.get_unchecked_mut(i) } = q;
+        limbs[i] = q;
         remainder = r;
     }
     // Compute last quotient
-    let first = unsafe { limbs.get_unchecked_mut(0) };
-    let n = u128::join(remainder, *first << shift);
+    let first = limbs[0];
+    let n = u128::join(remainder, first << shift);
     let (q, remainder) = div_2x1(n, divisor, reciprocal);
-    *first = q;
+    limbs[0] = q;
 
     // Un-normalize remainder
     remainder >> shift
 }
 
 /// ⚠️ Compute double limb normalized division.
-///
+#[doc = crate::algorithms::unstable_warning!()]
 /// Requires `divisor` to be in the range $[2^{127}, 2^{128})$ (i.e.
 /// normalized). Same as [`div_nx1`] but using [`div_3x2`] internally.
-#[inline]
+#[inline(always)]
 pub fn div_nx2_normalized(u: &mut [u64], d: u128) -> u128 {
     // OPT: Version with in-place shifting of `u`
     debug_assert!(d >= (1 << 127));
@@ -115,19 +120,20 @@ pub fn div_nx2_normalized(u: &mut [u64], d: u128) -> u128 {
 }
 
 /// ⚠️ Compute double limb division.
-///
+#[doc = crate::algorithms::unstable_warning!()]
 /// Requires `divisor` to be in the range $[2^{64}, 2^{128})$. Same as
 /// [`div_nx2_normalized`] but does the shifting of the numerator inline.
 ///
 /// # Panics
 ///
-/// May panics if the above requirements are not met.
-// TODO: Rewrite in a way that avoids bounds-checks without unsafe.
-#[inline]
+/// May panic if the above requirements are not met.
+#[inline(always)]
 pub fn div_nx2(limbs: &mut [u64], divisor: u128) -> u128 {
     debug_assert!(divisor >= 1 << 64);
     debug_assert!(!limbs.is_empty());
     debug_assert!(*limbs.last().unwrap() != 0);
+
+    let limbs = UncheckedSlice::wrap_mut(limbs);
 
     // Normalize and compute reciprocal
     let shift = divisor.high().leading_zeros();
@@ -137,30 +143,32 @@ pub fn div_nx2(limbs: &mut [u64], divisor: u128) -> u128 {
     let divisor = divisor << shift;
     let reciprocal = reciprocal_2(divisor);
 
-    let last = unsafe { limbs.get_unchecked(limbs.len() - 1) };
+    let last = limbs[limbs.len() - 1];
     let mut remainder: u128 = u128::from(last >> (64 - shift));
     for i in (1..limbs.len()).rev() {
         // Shift limbs
-        let upper = unsafe { limbs.get_unchecked(i) };
-        let lower = unsafe { limbs.get_unchecked(i - 1) };
+        let upper = limbs[i];
+        let lower = limbs[i - 1];
         let u = (upper << shift) | (lower >> (64 - shift));
 
         // Compute quotient
         let (q, r) = div_3x2(remainder, u, divisor, reciprocal);
 
         // Store quotient
-        *unsafe { limbs.get_unchecked_mut(i) } = q;
+        limbs[i] = q;
         remainder = r;
     }
     // Compute last quotient
-    let first = unsafe { limbs.get_unchecked_mut(0) };
-    let (q, remainder) = div_3x2(remainder, *first << shift, divisor, reciprocal);
-    *first = q;
+    let first = limbs[0];
+    let (q, remainder) = div_3x2(remainder, first << shift, divisor, reciprocal);
+    limbs[0] = q;
 
     // Un-normalize remainder
     remainder >> shift
 }
 
+/// ⚠️ Reference implementation for `div_2x1`.
+#[doc = crate::algorithms::unstable_warning!()]
 #[inline]
 #[must_use]
 pub fn div_2x1_ref(u: u128, d: u64) -> (u64, u64) {
@@ -173,7 +181,7 @@ pub fn div_2x1_ref(u: u128, d: u64) -> (u64, u64) {
 }
 
 /// ⚠️ Computes the quotient and remainder of a `u128` divided by a `u64`.
-///
+#[doc = crate::algorithms::unstable_warning!()]
 /// Requires
 /// * `u < d * 2**64`,
 /// * `d >= 2**63`, and
@@ -182,7 +190,7 @@ pub fn div_2x1_ref(u: u128, d: u64) -> (u64, u64) {
 /// Implements algorithm 4 from [MG10].
 ///
 /// [MG10]: https://gmplib.org/~tege/division-paper.pdf
-#[inline]
+#[inline(always)]
 #[must_use]
 pub fn div_2x1_mg10(u: u128, d: u64, v: u64) -> (u64, u64) {
     debug_assert!(d >= (1 << 63));
@@ -206,6 +214,8 @@ pub fn div_2x1_mg10(u: u128, d: u64, v: u64) -> (u64, u64) {
     (q1, r)
 }
 
+/// ⚠️ Reference implementation for `div_3x2`.
+#[doc = crate::algorithms::unstable_warning!()]
 /// TODO: This implementation is off by one.
 #[inline]
 #[must_use]
@@ -256,11 +266,11 @@ pub fn div_3x2_ref(n21: u128, n0: u64, d: u128) -> u64 {
 }
 
 /// ⚠️ Computes the quotient of a 192 bits divided by a normalized u128.
-///
+#[doc = crate::algorithms::unstable_warning!()]
 /// Implements [MG10] algorithm 5.
 ///
 /// [MG10]: https://gmplib.org/~tege/division-paper.pdf
-#[inline]
+#[inline(always)]
 #[must_use]
 pub fn div_3x2_mg10(u21: u128, u0: u64, d: u128, v: u64) -> (u64, u128) {
     debug_assert!(d >= (1 << 127));
@@ -289,7 +299,7 @@ mod tests {
     use crate::algorithms::addmul;
     use proptest::{
         collection,
-        num::{u128, u64},
+        num::{u64, u128},
         prop_assume, proptest,
         strategy::Strategy,
     };

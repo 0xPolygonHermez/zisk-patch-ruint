@@ -1,6 +1,6 @@
 # Rust `uint` crate using const-generics
 
-[![crates.io](https://buildstats.info/crate/ruint)](https://crates.io/crates/ruint)
+[![Crates.io Version](https://img.shields.io/crates/v/ruint)](https://crates.io/crates/ruint)
 [![docs.rs](https://img.shields.io/docsrs/ruint)](https://docs.rs/ruint)
 [![MIT License](https://img.shields.io/github/license/recmo/uint)](https://github.com/recmo/uint/blob/main/LICENSE)
 [![dependency status](https://deps.rs/repo/github/recmo/uint/status.svg)](https://deps.rs/repo/github/recmo/uint)
@@ -99,7 +99,7 @@ source files:
 
 ```rust
 # use ruint::uint;
-uint!{
+uint! {
 
 let a = 42_U256;
 let b = 0xf00f_1337_c0d3_U256;
@@ -122,7 +122,7 @@ When updating this, also update:
 
 Uint will keep a rolling MSRV (minimum supported rust version) policy of **at
 least** 6 months. When increasing the MSRV, the new Rust version must have been
-released at least six months ago. The current MSRV is 1.65.0.
+released at least six months ago. The current MSRV is 1.85.0.
 
 Note that the MSRV is not increased automatically, and only as part of a minor
 release.
@@ -132,7 +132,6 @@ release.
 There is support for a number of crates. These are enabled by setting the identically
 named feature flag.
 
-* `unstable` Enable sem-ver unstable features.
 * [`rand`](https://docs.rs/rand/0.8): Implements sampling from the [`Standard`](https://docs.rs/rand/0.8/rand/distributions/struct.Standard.html) distribution, i.e. [`rng.gen()`](https://docs.rs/rand/0.8/rand/trait.Rng.html#method.gen), alongside some utility `random*` methods on `Uint` itself.
 * [`rand-09`](https://docs.rs/rand/0.9): Implements sampling from the [`StandardUniform`](https://docs.rs/rand/0.9/rand/distr/struct.StandardUniform.html) distribution, i.e. [`rng.random()`](https://docs.rs/rand/0.9/rand/trait.Rng.html#method.random), alongside some utility `random*` methods on `Uint` itself.
 * [`arbitrary`](https://docs.rs/arbitrary): Implements the [`Arbitrary`](https://docs.rs/arbitrary/latest/arbitrary/trait.Arbitrary.html) trait, allowing [`Uint`]s to be generated for fuzz testing.
@@ -147,6 +146,7 @@ named feature flag.
 * [`bigdecimal`](https://docs.rs/bigdecimal) Implements conversion to/from [`BigDecimal`](https://docs.rs/bigdecimal/latest/bigdecimal/struct.BigDecimal.html).
 * [`ark-ff`](https://docs.rs/ark-ff): Implements conversion to/from the [`BigInteger*`](https://docs.rs/ark-ff/0.3.0/ark_ff/biginteger/index.html) types and the [`Fp*`](https://docs.rs/ark-ff/0.3.0/ark_ff/fields/models/index.html) types from `ark-ff@0.3`.
 * [`ark-ff-04`](https://docs.rs/ark-ff): Implements conversion to/from [`BigInt`](https://docs.rs/ark-ff/0.4.2/ark_ff/biginteger/struct.BigInt.html) and [`Fp`](https://docs.rs/ark-ff/0.4.2/ark_ff/fields/models/fp/struct.Fp.html) types from `ark-ff@0.4`.
+* [`ark-ff-05`](https://docs.rs/ark-ff): Implements conversion to/from [`BigInt`](https://docs.rs/ark-ff/0.5.0/ark_ff/biginteger/struct.BigInt.html) and [`Fp`](https://docs.rs/ark-ff/0.5.0/ark_ff/fields/models/fp/struct.Fp.html) types from `ark-ff@0.5`.
 * [`sqlx`](https://docs.rs/sqlx): Implements database agnostic storage as byte array. Requires
   `sqlx` to be used with the `tokio-native-tls` runtime, due to issue [sqlx#1627](https://github.com/launchbadge/sqlx/issues/1627).
 * [`zeroize`](https://docs.rs/zeroize): Implements the [`Zeroize`](https://docs.rs/zeroize/latest/zeroize/trait.Zeroize.html) trait. This makes [`Uint`] and [`Bits`] compatible with the [`secrecy`](https://crates.io/crates/secrecy) crate.
@@ -162,6 +162,7 @@ named feature flag.
 * [`rkyv`](https://docs.rs/rkyv/): Implements the [`Archive`](https://docs.rs/rkyv/latest/rkyv/trait.Archive.html), [`Serialize`](https://docs.rs/rkyv/latest/rkyv/trait.Serialize.html), [`Deserialize`](https://docs.rs/rkyv/latest/rkyv/trait.Deserialize.html) and [`Portable`](https://docs.rs/rkyv/latest/rkyv/trait.Portable.html) traits for `Uint` and `Bits`.
   Implements [`ArchivedUint`](https://docs.rs/ruint/latest/ruint/support/rkyv/struct.ArchivedUint.html) and [`ArchivedBits`](https://docs.rs/ruint/latest/ruint/support/rkyv/struct.ArchivedBits.html) types that can be used to access `Uint` and `Bits` values from an archive without needing to allocate new memory.
   This allows for zero-copy deserialization of `Uint` and `Bits` values.
+
 ## Building and testing
 
 Format, lint, build and test everything (I recommend creating a shell alias for this):

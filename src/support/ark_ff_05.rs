@@ -1,9 +1,9 @@
 //! Support for the [`ark-ff`](https://crates.io/crates/ark-ff) crate.
-#![cfg(feature = "ark-ff-04")]
-#![cfg_attr(docsrs, doc(cfg(feature = "ark-ff-04")))]
+#![cfg(feature = "ark-ff-05")]
+#![cfg_attr(docsrs, doc(cfg(feature = "ark-ff-05")))]
 
 use crate::{ToFieldError, Uint};
-use ark_ff_04::{
+use ark_ff_05::{
     PrimeField,
     biginteger::BigInt,
     fields::models::{Fp, FpConfig},
@@ -79,8 +79,8 @@ impl<P: FpConfig<LIMBS>, const BITS: usize, const LIMBS: usize> TryFrom<&Uint<BI
 mod tests {
     use super::*;
     use crate::aliases::U256;
-    use ark_bn254_04::{Fq, FqConfig, Fr, FrConfig};
-    use ark_ff_04::MontConfig;
+    use ark_bn254_05::{Fq, FqConfig, Fr, FrConfig};
+    use ark_ff_05::MontConfig;
     use proptest::proptest;
 
     macro_rules! test_roundtrip {
@@ -95,7 +95,7 @@ mod tests {
 
     #[test]
     fn test_roundtrip() {
-        use ark_ff_04::*;
+        use ark_ff_05::*;
         test_roundtrip!(BigInteger64, 64, 1);
         test_roundtrip!(BigInteger128, 128, 2);
         test_roundtrip!(BigInteger256, 256, 4);
