@@ -6,7 +6,7 @@ use core::{
 };
 
 #[cfg(all(target_os = "zkvm", target_vendor = "zisk"))]
-use ziskos::zisklib::{wmul256_ptr, omul256_ptr};
+use crate::zisk;
 
 impl<const BITS: usize, const LIMBS: usize> Uint<BITS, LIMBS> {
     /// Computes `self * rhs`, returning [`None`] if overflow occurred.
@@ -44,14 +44,13 @@ impl<const BITS: usize, const LIMBS: usize> Uint<BITS, LIMBS> {
         {
             if BITS == 256 && LIMBS == 4 {
                 let mut result = Self::ZERO;
-                let mut overflow;
-                unsafe {
-                    overflow = omul256_ptr(
+                let mut overflow = unsafe {
+                    zisk::omul256_c(
                         self.limbs.as_ptr(),
                         rhs.limbs.as_ptr(),
                         result.limbs.as_mut_ptr(),
-                    );
-                }
+                    )
+                };
                 if Self::SHOULD_MASK {
                     overflow |= result.limbs[LIMBS - 1] > Self::MASK;
                     result.apply_mask();
@@ -89,7 +88,7 @@ impl<const BITS: usize, const LIMBS: usize> Uint<BITS, LIMBS> {
             if BITS == 256 && LIMBS == 4 {
                 let mut result = Self::ZERO;
                 unsafe {
-                    wmul256_ptr(
+                    zisk::wmul256_c(
                         self.limbs.as_ptr(),
                         rhs.limbs.as_ptr(),
                         result.limbs.as_mut_ptr(),

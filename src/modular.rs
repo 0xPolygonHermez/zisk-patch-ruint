@@ -8,7 +8,7 @@ use crate::{Uint, algorithms};
 // FEATURE: Modular wrapper class, like Wrapping.
 
 #[cfg(all(target_os = "zkvm", target_vendor = "zisk"))]
-use ziskos::zisklib::{redmod256_ptr, addmod256_ptr, mulmod256_ptr};
+use crate::zisk;
 
 impl<const BITS: usize, const LIMBS: usize> Uint<BITS, LIMBS> {
     /// ⚠️ Compute $\mod{\mathtt{self}}_{\mathtt{modulus}}$.
@@ -29,7 +29,7 @@ impl<const BITS: usize, const LIMBS: usize> Uint<BITS, LIMBS> {
                 if BITS == 256 && LIMBS == 4 {
                     let mut result = Self::ZERO;
                     unsafe {
-                        redmod256_ptr(
+                        zisk::redmod256_c(
                             self.limbs.as_ptr(),
                             modulus.limbs.as_ptr(),
                             result.limbs.as_mut_ptr(),
@@ -57,7 +57,7 @@ impl<const BITS: usize, const LIMBS: usize> Uint<BITS, LIMBS> {
             if BITS == 256 && LIMBS == 4 {
                 let mut result = Self::ZERO;
                 unsafe {
-                    addmod256_ptr(
+                    zisk::addmod256_c(
                         self.limbs.as_ptr(),
                         rhs.limbs.as_ptr(),
                         modulus.limbs.as_ptr(),
@@ -123,7 +123,7 @@ impl<const BITS: usize, const LIMBS: usize> Uint<BITS, LIMBS> {
             if BITS == 256 && LIMBS == 4 {
                 let mut result = Self::ZERO;
                 unsafe {
-                    mulmod256_ptr(
+                    zisk::mulmod256_c(
                         self.limbs.as_ptr(),
                         rhs.limbs.as_ptr(),
                         modulus.limbs.as_ptr(),

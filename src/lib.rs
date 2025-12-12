@@ -359,6 +359,9 @@ pub mod __private {
     pub use ruint_macro;
 }
 
+#[cfg(all(target_os = "zkvm", target_vendor = "zisk"))]
+mod zisk;
+
 #[cfg(test)]
 mod test {
     use super::*;

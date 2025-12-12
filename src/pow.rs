@@ -1,7 +1,7 @@
 use crate::Uint;
 
 #[cfg(all(target_os = "zkvm", target_vendor = "zisk"))]
-use ziskos::zisklib::{wpow256_ptr};
+use crate::zisk;
 
 impl<const BITS: usize, const LIMBS: usize> Uint<BITS, LIMBS> {
     /// Raises self to the power of `exp`.
@@ -107,7 +107,7 @@ impl<const BITS: usize, const LIMBS: usize> Uint<BITS, LIMBS> {
             if BITS == 256 && LIMBS == 4 {
                 let mut result = Self::ZERO;
                 unsafe {
-                    wpow256_ptr(
+                    zisk::wpow256_c(
                         self.limbs.as_ptr(),
                         exp.limbs.as_ptr(),
                         result.limbs.as_mut_ptr(),
