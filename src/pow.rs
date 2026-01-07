@@ -117,6 +117,14 @@ impl<const BITS: usize, const LIMBS: usize> Uint<BITS, LIMBS> {
             }
         }
 
+        // ZisK hint for wpow256
+        if BITS == 256 && LIMBS == 4 {
+            let a: [u64; 4] = self.limbs[..4].try_into().unwrap();
+            let exp: [u64; 4] = exp.limbs[..4].try_into().unwrap();
+
+            ziskos::hints::hint_wpow256(&a, &exp);
+        }
+
         // Exponentiation by squaring
         let mut result = Self::ONE;
         while !exp.is_zero() {

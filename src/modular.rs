@@ -38,6 +38,15 @@ impl<const BITS: usize, const LIMBS: usize> Uint<BITS, LIMBS> {
                     return result;
                 }
             }
+
+            // ZisK hint for redmod256
+            if BITS == 256 && LIMBS == 4 {
+                let a: [u64; 4] = self.limbs[..4].try_into().unwrap();
+                let m: [u64; 4] = modulus.limbs[..4].try_into().unwrap();
+
+                ziskos::hints::hint_redmod256(&a, &m);
+            }
+
             self %= modulus;
         }
         self
@@ -66,6 +75,15 @@ impl<const BITS: usize, const LIMBS: usize> Uint<BITS, LIMBS> {
                 }
                 return result;
             }
+        }
+
+        // ZisK hint for addmod256
+        if BITS == 256 && LIMBS == 4 {
+            let a: [u64; 4] = self.limbs[..4].try_into().unwrap();
+            let b: [u64; 4] = rhs.limbs[..4].try_into().unwrap();
+            let m: [u64; 4] = modulus.limbs[..4].try_into().unwrap();
+
+            ziskos::hints::hint_addmod256(&a, &b, &m);
         }
 
         // This is not going to truncate with the final cast because the modulus value
@@ -132,6 +150,15 @@ impl<const BITS: usize, const LIMBS: usize> Uint<BITS, LIMBS> {
                 }
                 return result;
             }
+        }
+
+        // ZisK hint for mulmod256
+        if BITS == 256 && LIMBS == 4 {
+            let a: [u64; 4] = self.limbs[..4].try_into().unwrap();
+            let b: [u64; 4] = rhs.limbs[..4].try_into().unwrap();
+            let m: [u64; 4] = modulus.limbs[..4].try_into().unwrap();
+
+            ziskos::hints::hint_mulmod256(&a, &b, &m);
         }
 
         self.mul_mod_by_ref(&rhs, &mut modulus);

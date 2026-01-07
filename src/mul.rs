@@ -59,6 +59,14 @@ impl<const BITS: usize, const LIMBS: usize> Uint<BITS, LIMBS> {
             }
         }
 
+        // ZisK hint for omul256
+        if BITS == 256 && LIMBS == 4 {
+            let a: [u64; 4] = self.limbs[..4].try_into().unwrap();
+            let b: [u64; 4] = rhs.limbs[..4].try_into().unwrap();
+
+            ziskos::hints::hint_omul256(&a, &b);
+        }
+
         let mut result = Self::ZERO;
         let mut overflow = algorithms::addmul(&mut result.limbs, self.as_limbs(), rhs.as_limbs());
         if Self::SHOULD_MASK {
@@ -98,7 +106,15 @@ impl<const BITS: usize, const LIMBS: usize> Uint<BITS, LIMBS> {
                 return result;
             }
         }
-        
+
+        // ZisK hint for wmul256
+        if BITS == 256 && LIMBS == 4 {
+            let a: [u64; 4] = self.limbs[..4].try_into().unwrap();
+            let b: [u64; 4] = rhs.limbs[..4].try_into().unwrap();
+
+            ziskos::hints::hint_wmul256(&a, &b);
+        }
+
         let mut result = Self::ZERO;
         algorithms::addmul_n(&mut result.limbs, self.as_limbs(), rhs.as_limbs());
         result.apply_mask();

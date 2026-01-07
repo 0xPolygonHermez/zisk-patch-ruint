@@ -66,6 +66,14 @@ impl<const BITS: usize, const LIMBS: usize> Uint<BITS, LIMBS> {
             }
         }
 
+        // ZisK hint for divrem256
+        if BITS == 256 && LIMBS == 4 {
+            let a: [u64; 4] = self.limbs[..4].try_into().unwrap();
+            let b: [u64; 4] = rhs.limbs[..4].try_into().unwrap();
+
+            ziskos::hints::hint_divrem256(&a, &b);
+        }
+
         if LIMBS == 1 {
             let q = &mut self.limbs[0];
             let r = &mut rhs.limbs[0];
