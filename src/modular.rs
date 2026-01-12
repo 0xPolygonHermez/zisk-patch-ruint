@@ -45,6 +45,11 @@ impl<const BITS: usize, const LIMBS: usize> Uint<BITS, LIMBS> {
                 let m: [u64; 4] = modulus.limbs[..4].try_into().unwrap();
 
                 ziskos::hints::hint_redmod256(&a, &m);
+
+                ziskos::hints::pause_hints();
+                self %= modulus;
+                ziskos::hints::resume_hints();
+                return self
             }
 
             self %= modulus;
@@ -84,6 +89,8 @@ impl<const BITS: usize, const LIMBS: usize> Uint<BITS, LIMBS> {
             let m: [u64; 4] = modulus.limbs[..4].try_into().unwrap();
 
             ziskos::hints::hint_addmod256(&a, &b, &m);
+
+            ziskos::hints::pause_hints();
         }
 
         // This is not going to truncate with the final cast because the modulus value
@@ -97,7 +104,7 @@ impl<const BITS: usize, const LIMBS: usize> Uint<BITS, LIMBS> {
 
         // do overflowing add, then check if we should divrem
         let (result, overflow) = self.overflowing_add(rhs);
-        if overflow {
+        let result = if overflow {
             // Add carry bit to the result. We might need an extra limb.
             let_double_bits!(numerator);
             let (limb, bit) = (BITS / 64, BITS % 64);
@@ -116,7 +123,12 @@ impl<const BITS: usize, const LIMBS: usize> Uint<BITS, LIMBS> {
             modulus
         } else {
             result.reduce_mod(modulus)
+        };
+
+        if BITS == 256 && LIMBS == 4 {
+            ziskos::hints::resume_hints();
         }
+        result
     }
 
     #[inline(never)]

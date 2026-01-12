@@ -123,6 +123,7 @@ impl<const BITS: usize, const LIMBS: usize> Uint<BITS, LIMBS> {
             let exp: [u64; 4] = exp.limbs[..4].try_into().unwrap();
 
             ziskos::hints::hint_wpow256(&a, &exp);
+            ziskos::hints::pause_hints();
         }
 
         // Exponentiation by squaring
@@ -137,6 +138,11 @@ impl<const BITS: usize, const LIMBS: usize> Uint<BITS, LIMBS> {
             self = self.wrapping_mul(self);
             exp >>= 1;
         }
+
+        if BITS == 256 && LIMBS == 4 {
+            ziskos::hints::resume_hints();
+        }
+
         result
     }
 
