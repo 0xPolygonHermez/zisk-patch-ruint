@@ -9,6 +9,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.17.2] - 2025-12-28
+
+### Fixed
+
+- fix(docsrs): remove doc_auto_cfg ([#554])
+
+[#554]: https://github.com/recmo/uint/pull/554
+
+## [1.17.1] - 2025-12-26
+
+### Changed
+
+- Added `unsafe` to many unstable API functions in `algorithms` module, and
+  documented their conditions of use (COU). ([#552])
+
+[#552]: https://github.com/recmo/uint/pull/552
+
 ## [1.17.0] - 2025-09-24
 
 ### Added
@@ -469,7 +486,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- links to version -->
 
-[unreleased]: https://github.com/recmo/uint/compare/v1.17.0...HEAD
+[unreleased]: https://github.com/recmo/uint/compare/v1.17.2...HEAD
+[1.17.2]: https://github.com/recmo/uint/releases/tag/v1.17.2
+[1.17.1]: https://github.com/recmo/uint/releases/tag/v1.17.1
 [1.17.0]: https://github.com/recmo/uint/releases/tag/v1.17.0
 [1.16.0]: https://github.com/recmo/uint/releases/tag/v1.16.0
 [1.15.0]: https://github.com/recmo/uint/releases/tag/v1.15.0
